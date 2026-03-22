@@ -1,0 +1,369 @@
+let index = 0;
+
+function showNextImage() {
+    const images = document.getElementsByClassName('carousel-image');
+    for (let i = 0; i < images.length; i++) {
+        images[i].classList.remove('active');
+    }
+    index = (index + 1) % images.length;
+    images[index].classList.add('active');
+}
+
+function revealOnScroll() {
+    const reveals = document.querySelectorAll('.reveal');
+    
+    reveals.forEach(element => {
+        const windowHeight = window.innerHeight;
+        const elementTop = element.getBoundingClientRect().top;
+        const elementVisible = 150;
+        
+        if (elementTop < windowHeight - elementVisible) {
+            element.classList.add('active');
+        }
+    });
+}
+
+window.addEventListener('load', function() {
+    const images = document.getElementsByClassName('carousel-image');
+    if (images.length > 0) {
+        images[0].classList.add('active');
+    }
+    
+    setInterval(showNextImage, 3000);
+    
+    revealOnScroll();
+});
+
+window.addEventListener('scroll', revealOnScroll);
+
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth'
+            });
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPage = window.location.pathname;
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        if (link.getAttribute('href').includes(currentPage)) {
+            link.classList.add('active');
+        }
+    });
+});
+
+function checkUserLogin() {
+    fetch('/AUSSportsHub/user-info', {
+        method: 'GET',
+        credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.loggedIn) {
+            document.getElementById('userDropdown').style.display = 'block';
+            document.getElementById('loginLink').style.display = 'none';
+            document.getElementById('userName').textContent = data.fullName;
+            localStorage.setItem('userLoggedIn', 'true');
+            localStorage.setItem('userId', data.userId);
+            localStorage.setItem('userFullName', data.fullName);
+            
+            loadUserEventRegistrations();
+        } else {
+            document.getElementById('userDropdown').style.display = 'none';
+            document.getElementById('loginLink').style.display = 'block';
+            localStorage.setItem('userLoggedIn', 'false');
+            clearCurrentUserRegistrations();
+        }
+    })
+    .catch(error => {
+        console.error('Error checking login status:', error);
+        document.getElementById('userDropdown').style.display = 'none';
+        document.getElementById('loginLink').style.display = 'block';
+        localStorage.setItem('userLoggedIn', 'false');
+    });
+}
+
+function getUserRegistrationsKey() {
+    const userId = localStorage.getItem('userId');
+    return userId ? `userEventRegistrations_${userId}` : 'userEventRegistrations_anonymous';
+}
+
+function loadUserEventRegistrations() {
+    const userRegistrationsKey = getUserRegistrationsKey();
+    const userRegistrations = JSON.parse(localStorage.getItem(userRegistrationsKey) || '{}');
+    
+    Object.keys(userRegistrations).forEach(eventId => {
+        const buttons = document.querySelectorAll(`button[onclick*="${eventId}"]`);
+        buttons.forEach(button => {
+            button.textContent = 'Registered ✓';
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-success');
+            button.disabled = true;
+            
+            const card = button.closest('li');
+            const badge = card?.querySelector('.badge');
+            if (badge) {
+                badge.textContent = 'Registered';
+                badge.className = 'badge bg-warning text-dark';
+            }
+        });
+    });
+}
+
+function clearCurrentUserRegistrations() {
+    const registerButtons = document.querySelectorAll('button[onclick*="registerForEvent"]');
+    registerButtons.forEach(button => {
+        button.textContent = 'Register';
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-primary');
+        button.disabled = false;
+        
+        const card = button.closest('li');
+        const badge = card?.querySelector('.badge');
+        if (badge) {
+            const eventId = button.getAttribute('data-event-id') || 
+                           button.getAttribute('onclick').match(/'([^']+)'/)[1];
+            
+            badge.textContent = 'Open for Registration';
+            badge.className = 'badge bg-success';
+        }
+    });
+}
+
+function checkLoginStatus() {
+    const userDropdown = document.getElementById('userDropdown');
+    const loginLink = document.getElementById('loginLink');
+    
+    if (userDropdown && userDropdown.style.display !== 'none' && 
+        loginLink && loginLink.style.display === 'none') {
+        return true;
+    }
+    
+    return localStorage.getItem('userLoggedIn') === 'true';
+}
+
+async function loadHomepageEvents() {
+    try {
+        const response = await fetch('/AUSSportsHub/api/events');
+        
+        if (response.ok) {
+            const events = await response.json();
+            console.log('Loaded events from database:', events);
+            updateHomepageEvents(events);
+        }
+    } catch (error) {
+        console.error('Error loading events:', error);
+    }
+}
+
+function updateHomepageEvents(events) {
+    const eventsList = document.querySelector('.events-list');
+    if (!eventsList || !events || events.length === 0) return;
+
+    const eventItems = eventsList.querySelectorAll('li');
+    
+    events.slice(0, 3).forEach((event, index) => {
+        if (eventItems[index]) {
+            updateEventCard(eventItems[index], event);
+        }
+    });
+}
+
+function updateEventCard(cardElement, event) {
+    const titleElement = cardElement.querySelector('h5');
+    const dateElement = cardElement.querySelector('p.mb-1');
+    const locationElement = cardElement.querySelector('p.text-muted');
+    const badgeElement = cardElement.querySelector('.badge');
+    const buttonElement = cardElement.querySelector('button');
+    
+    if (titleElement) titleElement.textContent = event.title;
+    
+    if (dateElement) {
+        const eventDate = new Date(event.event_date).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        const startTime = event.start_time.substring(0, 5);
+        const endTime = event.end_time.substring(0, 5);
+        dateElement.textContent = `${eventDate} | ${startTime} - ${endTime}`;
+    }
+    
+    if (locationElement) locationElement.textContent = event.location;
+    
+    if (buttonElement && event.event_id) {
+        buttonElement.setAttribute('onclick', `registerForEvent('${event.event_id}')`);
+        buttonElement.setAttribute('data-event-id', event.event_id);
+        
+        const userRegistrationsKey = getUserRegistrationsKey();
+        const userRegistrations = JSON.parse(localStorage.getItem(userRegistrationsKey) || '{}');
+        
+        if (userRegistrations[event.event_id]) {
+            buttonElement.textContent = 'Registered ✓';
+            buttonElement.classList.remove('btn-outline-primary');
+            buttonElement.classList.add('btn-success');
+            buttonElement.disabled = true;
+            if (badgeElement) {
+                badgeElement.textContent = 'Registered';
+                badgeElement.className = 'badge bg-warning text-dark';
+            }
+        } else {
+            const currentPlayers = event.current_players || 0;
+            const maxPlayers = event.max_players;
+            
+            if (currentPlayers >= maxPlayers) {
+                buttonElement.disabled = true;
+                buttonElement.textContent = 'Event Full';
+                if (badgeElement) {
+                    badgeElement.textContent = 'Event Full';
+                    badgeElement.className = 'badge bg-danger';
+                }
+            } else {
+                buttonElement.disabled = false;
+                buttonElement.textContent = 'Register';
+                
+                const spotsLeft = maxPlayers - currentPlayers;
+                if (badgeElement) {
+                    if (spotsLeft <= 3) {
+                        badgeElement.textContent = 'Limited Spots';
+                        badgeElement.className = 'badge bg-warning text-dark';
+                    } else {
+                        badgeElement.textContent = 'Open for Registration';
+                        badgeElement.className = 'badge bg-success';
+                    }
+                }
+            }
+        }
+    }
+}
+
+async function registerForEvent(eventId) {
+    console.log('Registering for event:', eventId);
+    
+    if (!checkLoginStatus()) {
+        alert('Please log in to register for events.');
+        window.location.href = '../login.html';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/AUSSportsHub/api/events/${eventId}`);
+        if (response.ok) {
+            const event = await response.json();
+            const confirmRegister = confirm(
+                `Register for: ${event.title}\nDate: ${new Date(event.event_date).toLocaleDateString()}\nTime: ${event.start_time.substring(0, 5)} - ${event.end_time.substring(0, 5)}\nLocation: ${event.location}\n\nClick OK to confirm registration.`
+            );
+            
+            if (confirmRegister) {
+                await registerUserForEvent(eventId, event.title);
+            }
+        } else {
+            throw new Error('Event not found');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        const eventDetails = {
+            'basketball-tournament': {
+                name: 'Inter-College Basketball Tournament',
+                date: 'October 25, 2025',
+                time: '4:00 PM - 7:00 PM',
+                location: 'Main Sports Hall'
+            },
+            'padel-championship': {
+                name: 'Padel Tennis Championship',
+                date: 'November 5, 2025', 
+                time: '3:00 PM - 6:00 PM',
+                location: 'Outdoor Padel Courts'
+            },
+            'football-friendly': {
+                name: 'Football Friendly Match',
+                date: 'October 30, 2025',
+                time: '5:00 PM - 7:00 PM',
+                location: 'Main Football Field'
+            }
+        };
+        
+        const event = eventDetails[eventId];
+        if (event) {
+            const confirmRegister = confirm(
+                `Register for: ${event.name}\nDate: ${event.date}\nTime: ${event.time}\nLocation: ${event.location}\n\nClick OK to confirm registration.`
+            );
+            
+            if (confirmRegister) {
+                await registerUserForEvent(eventId, event.name);
+            }
+        }
+    }
+}
+
+async function registerUserForEvent(eventId, eventName) {
+    const registerButtons = document.querySelectorAll(`button[onclick*="${eventId}"]`);
+    
+    registerButtons.forEach(button => {
+        button.disabled = true;
+        button.textContent = 'Registering...';
+    });
+    
+    try {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        const userRegistrationsKey = getUserRegistrationsKey();
+        const userRegistrations = JSON.parse(localStorage.getItem(userRegistrationsKey) || '{}');
+        userRegistrations[eventId] = {
+            eventName: eventName,
+            registeredAt: new Date().toISOString(),
+            userId: localStorage.getItem('userId'),
+            userFullName: localStorage.getItem('userFullName')
+        };
+        localStorage.setItem(userRegistrationsKey, JSON.stringify(userRegistrations));
+        
+        alert(`Successfully registered for ${eventName}!`);
+        
+        registerButtons.forEach(button => {
+            button.textContent = 'Registered ✓';
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-success');
+            button.disabled = true;
+        });
+        
+        const button = registerButtons[0];
+        if (button) {
+            const card = button.closest('li');
+            const badge = card?.querySelector('.badge');
+            if (badge) {
+                badge.textContent = 'Registered';
+                badge.className = 'badge bg-warning text-dark';
+            }
+        }
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        alert('Registration failed. Please try again.');
+        
+        registerButtons.forEach(button => {
+            button.disabled = false;
+            button.textContent = 'Register';
+        });
+    }
+}
+
+window.onload = function() {
+    const images = document.getElementsByClassName('carousel-image');
+    if (images.length > 0) {
+        images[0].classList.add('active');
+        setInterval(showNextImage, 3000);
+    }
+    
+    window.addEventListener('scroll', revealOnScroll);
+    revealOnScroll();
+    
+    checkUserLogin();
+    loadHomepageEvents();
+};

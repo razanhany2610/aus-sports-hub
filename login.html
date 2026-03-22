@@ -1,0 +1,161 @@
+-- Complete AUS Sports Hub Database Schema
+SET FOREIGN_KEY_CHECKS=0;
+DROP TABLE IF EXISTS event_participants, match_history, bookings, events, courts, sports, users;
+SET FOREIGN_KEY_CHECKS=1;
+
+-- Users table
+CREATE TABLE users (
+    user_id BIGINT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    phone_number VARCHAR(15),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sports table
+CREATE TABLE sports (
+    sport_id INT AUTO_INCREMENT PRIMARY KEY,
+    sport_name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    hourly_rate DECIMAL(8,2) DEFAULT 0.00
+);
+
+-- Courts table
+CREATE TABLE courts (
+    court_id INT AUTO_INCREMENT PRIMARY KEY,
+    court_name VARCHAR(50) NOT NULL,
+    sport_id INT NOT NULL,
+    court_type ENUM('indoor', 'outdoor') DEFAULT 'indoor',
+    status ENUM('available', 'maintenance', 'unavailable') DEFAULT 'available',
+    FOREIGN KEY (sport_id) REFERENCES sports(sport_id) ON DELETE CASCADE
+);
+
+-- Bookings table
+CREATE TABLE bookings (
+    booking_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    court_id INT NOT NULL,
+    sport_id INT NOT NULL,
+    booking_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    duration DECIMAL(3,1) NOT NULL,
+    end_time TIME NOT NULL,
+    player_count INT DEFAULT 1,
+    special_requests TEXT,
+    status ENUM('confirmed', 'cancelled', 'completed') DEFAULT 'confirmed',
+    total_cost DECIMAL(8,2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (court_id) REFERENCES courts(court_id) ON DELETE CASCADE,
+    FOREIGN KEY (sport_id) REFERENCES sports(sport_id) ON DELETE CASCADE
+);
+
+-- Events table
+CREATE TABLE events (
+    event_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL,
+    sport_id INT NOT NULL,
+    organizer_id BIGINT NOT NULL,
+    event_date DATE NOT NULL,
+    event_time TIME NOT NULL,
+    location VARCHAR(100) NOT NULL,
+    max_players INT NOT NULL,
+    current_players INT DEFAULT 0,
+    description TEXT,
+    status ENUM('open', 'full', 'cancelled') DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sport_id) REFERENCES sports(sport_id) ON DELETE CASCADE,
+    FOREIGN KEY (organizer_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Event participants table
+CREATE TABLE event_participants (
+    participation_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT NOT NULL,
+    user_id BIGINT NOT NULL,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_participation (event_id, user_id)
+);
+
+-- Match history table
+CREATE TABLE match_history (
+    match_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    sport_id INT NOT NULL,
+    result ENUM('won', 'lost') NOT NULL,
+    match_date DATE NOT NULL,
+    opponent VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (sport_id) REFERENCES sports(sport_id) ON DELETE CASCADE
+);
+
+-- Insert sample data
+INSERT INTO users (user_id, username, email, password_hash, first_name, last_name) VALUES
+(15068730428078812663, 'john_doe', 'john.doe@aus.edu', 'hashed_password_1', 'John', 'Doe'),
+(15068730428078812664, 'jane_smith', 'jane.smith@aus.edu', 'hashed_password_2', 'Jane', 'Smith'),
+(15068730428078812665, 'mike_wilson', 'mike.wilson@aus.edu', 'hashed_password_3', 'Mike', 'Wilson');
+
+INSERT INTO sports (sport_name, description, hourly_rate) VALUES
+('padel', 'Fast-paced racquet sport perfect for all skill levels', 50.00),
+('basketball', 'Full court basketball with professional flooring', 40.00),
+('football', 'Indoor football with artificial turf', 60.00),
+('volleyball', 'Beach and indoor volleyball courts available', 45.00),
+('tennis', 'Professional tennis courts', 55.00);
+
+INSERT INTO courts (court_name, sport_id, court_type, status) VALUES
+('Padel Court 1', 1, 'outdoor', 'available'),
+('Padel Court 2', 1, 'outdoor', 'available'),
+('Padel Court 3', 1, 'indoor', 'available'),
+('Padel Court 4', 1, 'indoor', 'maintenance'),
+('Basketball Court 1', 2, 'indoor', 'available'),
+('Basketball Court 2', 2, 'indoor', 'available'),
+('Football Field 1', 3, 'outdoor', 'available'),
+('Football Field 2', 3, 'outdoor', 'available'),
+('Football Field 3', 3, 'indoor', 'available'),
+('Volleyball Court 1', 4, 'outdoor', 'available'),
+('Volleyball Court 2', 4, 'indoor', 'unavailable'),
+('Tennis Court 1', 5, 'outdoor', 'available'),
+('Tennis Court 2', 5, 'outdoor', 'available');
+
+INSERT INTO events (title, sport_id, organizer_id, event_date, event_time, location, max_players, description) VALUES
+('Weekend Padel Tournament', 1, 15068730428078812663, '2025-11-15', '14:00:00', 'Main Padel Courts', 16, 'Friendly padel tournament for all levels'),
+('Basketball 3v3 Competition', 2, 15068730428078812664, '2025-11-20', '16:00:00', 'Sports Hall A', 12, '3v3 basketball competition with prizes'),
+('Friday Football Fun', 3, 15068730428078812665, '2025-11-22', '18:00:00', 'Main Football Field', 20, 'Casual football match for AUS students');
+
+INSERT INTO bookings (user_id, court_id, sport_id, booking_date, start_time, duration, end_time, player_count, total_cost) VALUES
+(15068730428078812663, 1, 1, '2025-11-10', '14:00:00', 1.5, '15:30:00', 2, 75.00),
+(15068730428078812664, 5, 2, '2025-11-11', '16:00:00', 2.0, '18:00:00', 4, 80.00),
+(15068730428078812665, 7, 3, '2025-11-12', '19:00:00', 1.0, '20:00:00', 8, 60.00);
+
+INSERT INTO match_history (user_id, sport_id, result, match_date, opponent) VALUES
+(15068730428078812663, 1, 'won', '2025-11-01', 'Ahmed Team'),
+(15068730428078812663, 1, 'lost', '2025-11-03', 'Mohammed Team'),
+(15068730428078812663, 2, 'won', '2025-11-05', 'CSE Department'),
+(15068730428078812664, 3, 'won', '2025-11-02', 'Engineering Team'),
+(15068730428078812664, 3, 'won', '2025-11-04', 'Business Team');
+
+-- Verify data
+SELECT 'Users:' AS '';
+SELECT * FROM users;
+
+SELECT 'Sports:' AS '';
+SELECT * FROM sports;
+
+SELECT 'Courts:' AS '';
+SELECT * FROM courts;
+
+SELECT 'Events:' AS '';
+SELECT * FROM events;
+
+SELECT 'Bookings:' AS '';
+SELECT * FROM bookings;
+
+SELECT 'Match History:' AS '';
+SELECT * FROM match_history;

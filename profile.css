@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AUS Sports Hub - Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/AUSSportsHub/homepage/homepage.css">
+	<script src="/AUSSportsHub/homepage/homepage.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="homepage.html">
+                <i class="fas fa-running me-2"></i>
+                AUS Sports Hub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+				    <li class="nav-item">
+				        <a class="nav-link active" href="homepage.html">Home</a>
+				    </li>
+				    <li class="nav-item">
+				        <a class="nav-link" href="../events/events.html">Events</a>
+				    </li>
+				    <li class="nav-item">
+				        <a class="nav-link" href="../profile/profile.html">Profile</a>
+				    </li>
+				    <li class="nav-item">
+				        <a class="nav-link" href="../booking/booking.html">Book a Court</a>
+				    </li>
+				    
+				    <li class="nav-item dropdown" id="userDropdown" style="display: none;">
+				        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+				            <i class="fas fa-user me-1"></i>
+				            <span id="userName">User</span>
+				        </a>
+				        <ul class="dropdown-menu">
+				            <li><a class="dropdown-item" href="../profile/profile.html">Profile</a></li>
+				            <li><hr class="dropdown-divider"></li>
+				            <li><a class="dropdown-item" href="../logout">Logout</a></li>
+				        </ul>
+				    </li>
+				    
+				    <li class="nav-item" id="loginLink">
+				        <a class="nav-link" href="../login.html">Login</a>
+				    </li>
+				</ul>
+				            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section reveal">
+        <div class="container">
+            <h1 class="display-4 fw-bold">AUS Sports Hub</h1>
+            <p class="lead">Welcome to the American University of Sharjah sports platform! Book courts, join events, and track your performance.</p>
+            <a href="/AUSSportsHub/booking/booking.html" class="btn btn-lg btn-primary mt-3">Book a Court Now</a>
+        </div>
+    </section>
+
+    <section class="py-4 bg-white reveal">
+        <div class="carousel-container">
+            <img class="carousel-image" src="/AUSSportsHub/img/footbal aus.jpg" alt="AUS Football Field">
+            <img class="carousel-image" src="/AUSSportsHub/img/padel aus.jpg" alt="AUS Padel Court">
+            <img class="carousel-image" src="/AUSSportsHub/img/basketball aus.jpg" alt="AUS Basketball Court">
+            <img class="carousel-image" src="/AUSSportsHub/img/swimming pool aus.jpg" alt="AUS Swimming Pool">
+        </div>
+    </section>
+
+    <section class="py-5 reveal">
+        <div class="container">
+            <h2 class="section-title">Quick Book a Court</h2>
+            <p class="text-muted mb-4">Check availability and reserve your spot.</p>
+            
+            <div class="row">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card sport-card" onclick="location.href='../booking/booking.html'" data-sport="padel">
+                        <div class="sport-icon-container">
+                            <i class="fas fa-table-tennis-paddle-ball sport-icon"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Padel Booking</h5>
+                            <p class="card-text">Check availability and reserve your spot.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="availability-indicator available"></span>
+                                <small class="text-muted">4 courts available</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="card sport-card" onclick="location.href='../booking/booking.html'" data-sport="basketball">
+                        <div class="sport-icon-container">
+                            <i class="fas fa-basketball sport-icon"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Basketball Booking</h5>
+                            <p class="card-text">Check availability and reserve your spot.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="availability-indicator limited"></span>
+                                <small class="text-muted">1 court available</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="card sport-card" onclick="location.href='../booking/booking.html'" data-sport="football">
+                        <div class="sport-icon-container">
+                            <i class="fas fa-futbol sport-icon"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Football Booking</h5>
+                            <p class="card-text">Check availability and reserve your spot.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="availability-indicator available"></span>
+                                <small class="text-muted">3 courts available</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 col-lg-3">
+                    <div class="card sport-card" onclick="location.href='../booking/booking.html'" data-sport="volleyball">
+                        <div class="sport-icon-container">
+                            <i class="fas fa-volleyball sport-icon"></i>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">Volleyball Booking</h5>
+                            <p class="card-text">Check availability and reserve your spot.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="availability-indicator unavailable"></span>
+                                <small class="text-muted">No courts available</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="../booking/booking.html" class="btn btn-primary">View All Sports & Availability</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-white reveal">
+        <div class="container">
+            <h2 class="section-title text-center">Why Choose AUS Sports Hub?</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h4>Easy Booking</h4>
+                        <p>Quick and simple court reservation system with real-time availability.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h4>Join Events</h4>
+                        <p>Participate in sports events and tournaments organized by the university.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-box">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h4>Track Performance</h4>
+                        <p>Monitor your sports activities and track your improvement over time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+	<section class="py-5 reveal">
+	    <div class="container">
+	        <h2 class="section-title">Upcoming Sports Events</h2>
+	        
+	        <div class="row">
+	            <div class="col-md-8">
+	                <ul class="events-list">
+	                    <li>
+	                        <div class="d-flex justify-content-between">
+	                            <div>
+	                                <h5>Inter-College Basketball Tournament</h5>
+	                                <p class="mb-1">October 25, 2025 | 4:00 PM - 7:00 PM</p>
+	                                <p class="text-muted">Main Sports Hall</p>
+	                            </div>
+	                            <div>
+	                                <span class="badge bg-success">Open for Registration</span>
+	                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="registerForEvent('basketball-tournament')">Register</button>
+	                            </div>
+	                        </div>
+	                    </li>
+	                    <li>
+	                        <div class="d-flex justify-content-between">
+	                            <div>
+	                                <h5>Padel Tennis Championship</h5>
+	                                <p class="mb-1">November 5, 2025 | 3:00 PM - 6:00 PM</p>
+	                                <p class="text-muted">Outdoor Padel Courts</p>
+	                            </div>
+	                            <div>
+	                                <span class="badge bg-warning text-dark">Limited Spots</span>
+	                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="registerForEvent('padel-championship')">Register</button>
+	                            </div>
+	                        </div>
+	                    </li>
+	                    <li>
+	                        <div class="d-flex justify-content-between">
+	                            <div>
+	                                <h5>Football Friendly Match</h5>
+	                                <p class="mb-1">October 30, 2025 | 5:00 PM - 7:00 PM</p>
+	                                <p class="text-muted">Main Football Field</p>
+	                            </div>
+	                            <div>
+	                                <span class="badge bg-success">Open for Registration</span>
+	                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="registerForEvent('football-friendly')">Register</button>
+	                            </div>
+	                        </div>
+	                    </li>
+	                </ul>
+	                
+	                <div class="text-center mt-4">
+	                    <a href="../events/events.html" class="btn btn-outline-primary">View All Events</a>
+	                </div>
+	            </div>
+	            
+	            <div class="col-md-4">
+	                <div class="stats-card">
+	                    <h3>12</h3>
+	                    <p>Active Bookings This Week</p>
+	                </div>
+	                <div class="stats-card">
+	                    <h3>8</h3>
+	                    <p>Upcoming Events</p>
+	                </div>
+	                <div class="stats-card">
+	                    <h3>156</h3>
+	                    <p>Active Members</p>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+	</section>
+
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5><i class="fas fa-running me-2"></i>AUS Sports Hub</h5>
+                    <p>American University of Sharjah's premier sports booking and management platform.</p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="homepage.html" class="text-light">Home</a></li>
+                        <li><a href="../booking/booking.html" class="text-light">Book a Court</a></li>
+                        <li><a href="../events/events.html" class="text-light">Events</a></li>
+                        <li><a href="../profile/profile.html" class="text-light">Profile</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Contact Us</h5>
+                    <p><i class="fas fa-map-marker-alt me-2"></i> American University of Sharjah</p>
+                    <p><i class="fas fa-phone me-2"></i> +971 6 515 5555</p>
+                    <p><i class="fas fa-envelope me-2"></i> sports@aus.edu</p>
+                </div>
+            </div>
+            <hr class="bg-light">
+            <div class="text-center">
+                <p>&copy; 2025 AUS Sports Hub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+</body>
+</html>

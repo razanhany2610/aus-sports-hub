@@ -1,0 +1,600 @@
+document.addEventListener('DOMContentLoaded', function() {
+    const eventList = document.getElementById('event-list');
+    const noEvents = document.getElementById('no-events');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const createEventBtn = document.querySelector('.create-event-btn');
+    
+    let events = [];
+    let currentFilter = 'all';
+    
+    const API_BASE = window.location.origin + '/AUS_Sports_Hub/api';
+
+    async function initializeEvents() {
+        try {
+            const response = await fetch(`${API_BASE}/events`);
+            
+            if (response.ok) {
+                const apiEvents = await response.json();
+                
+                events = apiEvents.map(event => ({
+                    id: event.event_id,
+                    title: event.title,
+                    sport: getSportType(event),
+                    date: formatEventDate(event.event_date, event.start_time, event.end_time),
+                    organizer: "AUS Sports Committee",
+                    players: { 
+                        current: event.current_players || 0, 
+                        max: event.max_players 
+                    },
+                    spotsLeft: event.max_players - (event.current_players || 0),
+                    status: event.status,
+                    location: event.location,
+                    description: event.description,
+                    event_date: event.event_date,
+                    start_time: event.start_time,
+                    end_time: event.end_time
+                }));
+                
+                displayEvents(events);
+                
+            } else {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.error('Error fetching events from API:', error);
+            loadStaticEvents();
+        }
+    }
+
+    function getSportType(event) {
+        const title = event.title.toLowerCase();
+        if (title.includes('basketball')) return 'basketball';
+        if (title.includes('football')) return 'football';
+        if (title.includes('padel')) return 'padel';
+        if (title.includes('volleyball')) return 'volleyball';
+        if (title.includes('tennis')) return 'tennis';
+        return 'basketball';
+    }
+
+    function formatEventDate(dateString, startTime, endTime) {
+        try {
+            const eventDate = new Date(dateString);
+            const start = startTime ? startTime.substring(0, 5) : '';
+            const end = endTime ? endTime.substring(0, 5) : '';
+            
+            return eventDate.toLocaleDateString('en-US', { 
+                weekday: 'short',
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+            }) + (start ? ` | ${start} - ${end}` : '');
+        } catch (error) {
+            return dateString;
+        }
+    }
+
+    function loadStaticEvents() {
+        events = [
+            {
+                id: 'basketball-tournament',
+                title: "Inter-College Basketball Tournament",
+                sport: "basketball",
+                date: "Oct 25, 2025 | 16:00 - 19:00",
+                organizer: "AUS Sports Committee",
+                players: { current: 12, max: 50 },
+                spotsLeft: 38,
+                location: "Main Sports Hall",
+                description: "Inter-college basketball tournament for all AUS colleges"
+            },
+            {
+                id: 'padel-championship', 
+                title: "Padel Tennis Championship",
+                sport: "padel",
+                date: "Nov 5, 2025 | 15:00 - 18:00",
+                organizer: "AUS Sports Committee",
+                players: { current: 8, max: 32 },
+                spotsLeft: 24,
+                location: "Outdoor Padel Courts",
+                description: "Padel tennis championship for all skill levels"
+            },
+            {
+                id: 'football-friendly',
+                title: "Football Friendly Match",
+                sport: "football", 
+                date: "Oct 30, 2025 | 17:00 - 19:00",
+                organizer: "AUS Sports Committee",
+                players: { current: 15, max: 22 },
+                spotsLeft: 7,
+                location: "Main Football Field",
+                description: "Casual football match for all skill levels"
+            }
+        ];
+        displayEvents(events);
+    }
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentFilter = this.dataset.filter;
+            
+            if (currentFilter === 'all') {
+                displayEvents(events);
+            } else {
+                const filteredEvents = events.filter(event => event.sport === currentFilter);
+                displayEvents(filteredEvents);
+            }
+        });
+    });
+    
+    createEventBtn.addEventListener('click', function() {
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            alert('Please log in to create an event.');
+            window.location.href = '../auth/login.html';
+            return;
+        }
+        
+        const modalElement = document.getElementById('createEventModal');
+        const formElement = document.getElementById('createEventForm');
+        
+        if (!modalElement) {
+            alert('Error: Modal not found. Please refresh the page.');
+            return;
+        }
+        
+        if (formElement) {
+            formElement.reset();
+            
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('eventDate');
+            if (dateInput) {
+                dateInput.min = today;
+                dateInput.value = today;
+            }
+        }
+        
+        try {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } catch (error) {
+            modalElement.style.display = 'block';
+            modalElement.classList.add('show');
+            modalElement.setAttribute('aria-hidden', 'false');
+        }
+    });
+
+    document.getElementById('submitEventBtn').addEventListener('click', async function() {
+        const form = document.getElementById('createEventForm');
+        const submitBtn = this;
+        
+        if (!form) {
+            return;
+        }
+        
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            alert('Please log in to create an event.');
+            return;
+        }
+        
+        const eventData = {
+            title: document.getElementById('eventTitle').value,
+            sport: document.getElementById('eventSport').value,
+            event_date: document.getElementById('eventDate').value,
+            start_time: document.getElementById('startTime').value,
+            end_time: document.getElementById('endTime').value,
+            max_players: parseInt(document.getElementById('maxPlayers').value),
+            location: document.getElementById('eventLocation').value,
+            description: document.getElementById('eventDescription').value,
+            is_public: document.getElementById('isPublicEvent').checked,
+            organizer_id: currentUser.id,
+            organizer_name: currentUser.fullName || currentUser.username,
+            status: 'upcoming'
+        };
+        
+        if (eventData.start_time >= eventData.end_time) {
+            alert('End time must be after start time.');
+            return;
+        }
+        
+        const eventDate = new Date(eventData.event_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (eventDate < today) {
+            alert('Event date cannot be in the past.');
+            return;
+        }
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+        submitBtn.disabled = true;
+        
+        try {
+            const response = await fetch(`${API_BASE}/events`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(eventData)
+            });
+            
+            let newEvent;
+            
+            if (response.ok) {
+                newEvent = await response.json();
+            } else {
+                newEvent = await createEventLocalStorage(eventData);
+            }
+            
+            const transformedEvent = {
+                id: newEvent.event_id || newEvent.id,
+                title: newEvent.title,
+                sport: newEvent.sport,
+                date: formatEventDate(newEvent.event_date, newEvent.start_time, newEvent.end_time),
+                organizer: newEvent.organizer_name || "You",
+                players: { 
+                    current: 1,
+                    max: newEvent.max_players 
+                },
+                spotsLeft: newEvent.max_players - 1,
+                status: newEvent.status,
+                location: newEvent.location,
+                description: newEvent.description,
+                event_date: newEvent.event_date,
+                start_time: newEvent.start_time,
+                end_time: newEvent.end_time
+            };
+            
+            events.unshift(transformedEvent);
+            
+            registerUserForEvent(transformedEvent.id, transformedEvent.title, currentUser);
+            
+            displayEvents(currentFilter === 'all' ? events : events.filter(e => e.sport === currentFilter));
+            
+            const modalElement = document.getElementById('createEventModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            } else {
+                modalElement.style.display = 'none';
+                modalElement.classList.remove('show');
+            }
+            
+            alert(`Event "${eventData.title}" created successfully! You have been automatically registered.`);
+            
+        } catch (error) {
+            console.error('Error creating event:', error);
+            alert('Failed to create event. Please try again.');
+        } finally {
+            submitBtn.innerHTML = 'Create Event';
+            submitBtn.disabled = false;
+        }
+    });
+
+    function createEventLocalStorage(eventData) {
+        return new Promise((resolve) => {
+            const eventId = 'event-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            
+            const newEvent = {
+                id: eventId,
+                event_id: eventId,
+                title: eventData.title,
+                sport: eventData.sport,
+                event_date: eventData.event_date,
+                start_time: eventData.start_time,
+                end_time: eventData.end_time,
+                max_players: eventData.max_players,
+                current_players: 1,
+                location: eventData.location,
+                description: eventData.description,
+                organizer_id: eventData.organizer_id,
+                organizer_name: eventData.organizer_name,
+                status: 'upcoming',
+                created_at: new Date().toISOString()
+            };
+            
+            const localEvents = JSON.parse(localStorage.getItem('localEvents') || '[]');
+            localEvents.push(newEvent);
+            localStorage.setItem('localEvents', JSON.stringify(localEvents));
+            
+            resolve(newEvent);
+        });
+    }
+
+    function getCurrentUser() {
+        let userId = localStorage.getItem('userId');
+        
+        if (!userId || userId.startsWith('temp-user-')) {
+            userId = 'user-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('userId', userId);
+            localStorage.setItem('userFullName', 'AUS Student');
+            localStorage.setItem('username', 'student');
+            
+            const oldTempKey = Object.keys(localStorage).find(key => key.startsWith('userEventRegistrations_temp-user-'));
+            if (oldTempKey) {
+                localStorage.removeItem(oldTempKey);
+            }
+        }
+        
+        return {
+            id: userId,
+            fullName: localStorage.getItem('userFullName') || 'AUS Student',
+            username: localStorage.getItem('username') || 'student'
+        };
+    }
+
+    function getUserEventRegistrations() {
+        const currentUser = getCurrentUser();
+        const userRegistrationsKey = `userEventRegistrations_${currentUser.id}`;
+        
+        if (!localStorage.getItem(userRegistrationsKey)) {
+            localStorage.setItem(userRegistrationsKey, JSON.stringify({}));
+        }
+        
+        return JSON.parse(localStorage.getItem(userRegistrationsKey) || '{}');
+    }
+
+    function registerUserForEvent(eventId, eventTitle, user = null) {
+        const currentUser = user || getCurrentUser();
+        
+        const userRegistrationsKey = `userEventRegistrations_${currentUser.id}`;
+        let userRegistrations = {};
+        
+        try {
+            userRegistrations = JSON.parse(localStorage.getItem(userRegistrationsKey) || '{}');
+        } catch (e) {
+            userRegistrations = {};
+        }
+        
+        userRegistrations[eventId] = {
+            eventName: eventTitle,
+            registeredAt: new Date().toISOString(),
+            userId: currentUser.id,
+            userFullName: currentUser.fullName
+        };
+        
+        localStorage.setItem(userRegistrationsKey, JSON.stringify(userRegistrations));
+        
+        window.dispatchEvent(new CustomEvent('profileDataUpdated'));
+        localStorage.setItem('profileNeedsRefresh', Date.now().toString());
+        
+        return true;
+    }
+
+    function triggerProfileUpdate() {
+        window.dispatchEvent(new CustomEvent('profileDataUpdated'));
+        localStorage.setItem('profileNeedsRefresh', Date.now().toString());
+    }
+
+    function isUserRegisteredForEvent(eventId) {
+        const userRegistrations = getUserEventRegistrations();
+        return !!userRegistrations[eventId];
+    }
+
+    function clearMyRegistrations() {
+        const currentUser = getCurrentUser();
+        const userRegistrationsKey = `userEventRegistrations_${currentUser.id}`;
+        localStorage.setItem(userRegistrationsKey, JSON.stringify({}));
+        alert('Your event registrations have been cleared!');
+        displayEvents(currentFilter === 'all' ? events : events.filter(e => e.sport === currentFilter));
+    }
+    
+    function displayEvents(eventsToDisplay) {
+        eventList.innerHTML = '';
+        
+        if (eventsToDisplay.length === 0) {
+            noEvents.style.display = 'block';
+            return;
+        }
+        
+        noEvents.style.display = 'none';
+        
+        eventsToDisplay.forEach(event => {
+            const eventCard = document.createElement('div');
+            eventCard.className = 'event-card';
+            
+            const sportIcon = getSportIcon(event.sport);
+            
+            const isRegistered = isUserRegisteredForEvent(event.id);
+            
+            eventCard.innerHTML = `
+                <div class="event-header">
+                    <div class="event-sport-badge">
+                        <i class="${sportIcon} me-1"></i>
+                        ${capitalizeFirst(event.sport)}
+                    </div>
+                    <h4 class="event-title">${event.title}</h4>
+                    <div class="event-details">
+                        <div class="event-organizer">
+                            <i class="fas fa-user me-1"></i>Organizer: ${event.organizer}
+                        </div>
+                        <div class="event-location">
+                            <i class="fas fa-map-marker-alt me-1"></i>${event.location}
+                        </div>
+                        <div class="event-time">
+                            <i class="fas fa-clock me-1"></i>${event.date}
+                        </div>
+                        ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
+                    </div>
+                    <div class="players-info">
+                        <div class="progress">
+                            <div class="progress-bar" style="width: ${(event.players.current / event.players.max) * 100}%"></div>
+                        </div>
+                        <div class="players-count">${event.players.current} / ${event.players.max} players</div>
+                    </div>
+                </div>
+                <div class="event-actions">
+                    <button class="join-btn ${isRegistered ? 'registered' : ''} ${event.spotsLeft === 0 ? 'disabled' : ''}" 
+                            data-event-id="${event.id}"
+                            ${isRegistered ? 'disabled' : ''}
+                            ${event.spotsLeft === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-user-plus me-1"></i>
+                        ${isRegistered ? 'Registered ✓' : (event.spotsLeft > 0 ? `Join (${event.spotsLeft} spots left)` : 'Event Full')}
+                    </button>
+                    ${isRegistered ? '<div class="registered-badge">You are registered for this event</div>' : ''}
+                </div>
+            `;
+            
+            const joinBtn = eventCard.querySelector('.join-btn');
+            if (event.spotsLeft > 0 && !isRegistered) {
+                joinBtn.addEventListener('click', function() {
+                    joinEvent(event.id, event.title);
+                });
+            }
+            
+            if (isRegistered) {
+                joinBtn.classList.add('btn-success');
+                joinBtn.classList.remove('btn-primary');
+            }
+            
+            eventList.appendChild(eventCard);
+        });
+    }
+    
+    function getSportIcon(sportName) {
+        const icons = {
+            padel: 'fas fa-table-tennis-paddle-ball',
+            basketball: 'fas fa-basketball',
+            football: 'fas fa-futbol',
+            volleyball: 'fas fa-volleyball',
+            tennis: 'fas fa-table-tennis'
+        };
+        return icons[sportName] || 'fas fa-running';
+    }
+    
+    async function joinEvent(eventId, eventTitle) {
+        const event = events.find(e => e.id === eventId);
+        if (event && event.spotsLeft > 0) {
+            try {
+                if (isUserRegisteredForEvent(eventId)) {
+                    alert('You are already registered for this event!');
+                    return;
+                }
+                
+                const joinBtn = document.querySelector(`.join-btn[data-event-id="${eventId}"]`);
+                const originalText = joinBtn.innerHTML;
+                joinBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Registering...';
+                joinBtn.disabled = true;
+                
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                const success = registerUserForEvent(eventId, eventTitle);
+                
+                if (success) {
+                    displayEvents(currentFilter === 'all' ? events : events.filter(e => e.sport === currentFilter));
+                    alert(`You have successfully registered for "${eventTitle}"!`);
+                } else {
+                    throw new Error('Failed to register user');
+                }
+                
+            } catch (error) {
+                console.error('Error joining event:', error);
+                alert('Registration failed. Please try again.');
+                
+                const joinBtn = document.querySelector(`.join-btn[data-event-id="${eventId}"]`);
+                if (joinBtn) {
+                    joinBtn.innerHTML = originalText;
+                    joinBtn.disabled = false;
+                }
+            }
+        }
+    }
+    
+    function capitalizeFirst(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    
+    initializeEvents();
+});
+
+function loadRecentActivity() {
+    const activityList = document.getElementById('recentActivity');
+    const userRegistrations = getUserEventRegistrations();
+    const courtBookings = getCourtBookings();
+    
+    const activities = [];
+    
+    Object.entries(userRegistrations).forEach(([eventId, registration]) => {
+        activities.push({
+            type: 'event_registration',
+            eventName: registration.eventName,
+            timestamp: new Date(registration.registeredAt),
+            id: eventId
+        });
+    });
+    
+    courtBookings.forEach(booking => {
+        activities.push({
+            type: 'court_booking',
+            sport: booking.sport,
+            court: booking.court,
+            timestamp: new Date(booking.bookedAt),
+            id: booking.id
+        });
+    });
+    
+    if (activities.length === 0) {
+        activityList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-calendar-plus"></i>
+                <p>No recent activity</p>
+                <small>Register for events or book courts to see your activity here</small>
+            </div>
+        `;
+        return;
+    }
+    
+    activities.sort((a, b) => b.timestamp - a.timestamp);
+    
+    activityList.innerHTML = '';
+    
+    activities.slice(0, 5).forEach(activity => {
+        const activityItem = document.createElement('div');
+        activityItem.className = 'activity-item';
+        
+        const timeAgo = getTimeAgo(activity.timestamp);
+        const icon = activity.type === 'event_registration' ? 'fa-user-plus' : 'fa-calendar-check';
+        const title = activity.type === 'event_registration' 
+            ? `Registered for ${activity.eventName}`
+            : `Booked ${activity.court} for ${activity.sport}`;
+        
+        activityItem.innerHTML = `
+            <div class="activity-icon">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="activity-content">
+                <h6 class="activity-title">${title}</h6>
+                <p class="activity-time">${timeAgo}</p>
+            </div>
+        `;
+        
+        activityList.appendChild(activityItem);
+    });
+}
+
+function resetUserForTesting() {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        const userRegistrationsKey = `userEventRegistrations_${userId}`;
+        localStorage.removeItem(userRegistrationsKey);
+    }
+    
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userFullName');
+    localStorage.removeItem('username');
+    
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('userEventRegistrations_temp-user-') || key.startsWith('userEventRegistrations_user-')) {
+            localStorage.removeItem(key);
+        }
+    });
+    
+    alert('User data reset! Page will reload.');
+    location.reload();
+}
